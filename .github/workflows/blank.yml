@@ -1,0 +1,39 @@
+name: Build Aseprite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest  # También puedes usar `ubuntu-latest` o `macos-latest`
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Importante para Aseprite
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install -y cmake ninja 7zip
+
+    - name: Build Aseprite
+      run: |
+        mkdir build
+        cd build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+        cmake --build . --config Release --target aseprite
+
+    - name: Compress executable (7z)
+      run: |
+        7z a aseprite.7z build/bin/aseprite.exe
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: aseprite-release
+        path: aseprite.7z
